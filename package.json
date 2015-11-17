@@ -1,0 +1,20 @@
+{
+  "name": "entities",
+  "version": "1.0.0",
+  "description": "this is a little  mysql orm",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mysql",
+    "orm",
+    "simple"
+  ],
+  "author": "miwoy",
+  "license": "ISC",
+  "dependencies": {
+    "mysql": "^2.9.0",
+    "underscore": "^1.8.3"
+  }
+}
