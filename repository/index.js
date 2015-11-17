@@ -1,5 +1,3 @@
-var _pool = require('./db').pool;
-
 var mysql = {};
 
 mysql.pool = null;

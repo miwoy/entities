@@ -1,10 +1,14 @@
 {
-  "name": "entities",
+  "name": "node-entities",
   "version": "1.0.0",
   "description": "this is a little  mysql orm",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:miwoy/entities.git"
   },
   "keywords": [
     "mysql",
