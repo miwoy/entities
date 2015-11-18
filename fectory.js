@@ -65,7 +65,7 @@ Fectory.prototype.begin = function(callback) {
  */
 var query = function(sql, args, ts, callback) {
 
-    console.log("debug:sql:", sql, "args:", args);
+    //console.log("debug:sql:", sql, "args:", args);
 
     if (!callback) {
         var _sql = new SQL(ts);
@@ -578,7 +578,6 @@ function SQL(content) {
         if (_.isObject(queryData)) {
             var fromKeys = _.keys(this.$table),
                 as = fromKeys[fromKeys.length - 1];
-            console.log(as);
             this.convertQueryArgs(as, queryData);
         }
         return this;
@@ -674,7 +673,6 @@ function SQL(content) {
      * @return {Object}            返回上级作用域对象（fectory or trans）
      */
     this.exec = function(callback) {
-        console.log("SQL", this);
         var sqlObj = {};
         if (this.__sql__ && this.__args__) {
             sqlObj.sql = this.__sql__;
@@ -726,7 +724,6 @@ SQL.prototype.convertQueryArgs = function(as, queryArgs) {
         }
     });
 
-    console.log(queryArgs);
     this.$where[as] = _.extend(this.$where[as] || {}, returnArgs);
 
     return returnArgs;
@@ -820,7 +817,6 @@ function execQueue(queue, func, args, ts, callback) {
  * @return {Boolean} 验证成功返回true, 失败返回false
  */
 function checkObjForModel(model, obj) {
-    console.log(model, obj);
     _.each(obj, function(v, k) {
         if (!(/\$/g.test(k) || k in model)) {
 
