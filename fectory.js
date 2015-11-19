@@ -1,6 +1,8 @@
 var _ = require('underscore');
+var x = require('x-flow');
 var models = {};
 var repository = require('./repository');
+
 
 //repository.pool = mysql.createPool(config.mysql);
 
@@ -65,7 +67,7 @@ Fectory.prototype.begin = function(callback) {
  */
 var query = function(sql, args, ts, callback) {
 
-    //console.log("debug:sql:", sql, "args:", args);
+    // console.log("debug:sql:", sql, "args:", args);
 
     if (!callback) {
         var _sql = new SQL(ts);
@@ -497,10 +499,10 @@ var del = function(modelName, queryArgs, ts, callback) {
 
 
 
-module.exports ={
-    Fectory:Fectory,
-    models:models,
-    repository:repository
+module.exports = {
+    Fectory: Fectory,
+    models: models,
+    repository: repository
 };
 
 /**
@@ -681,6 +683,25 @@ function SQL(content) {
             sqlObj = this.gSQL();
         }
 
+        if (this.$andCount) {
+            x.begin()
+                .next(this.content, this.content.query, [sqlObj.sql, sqlObj.args])
+                .next(this.content, this.content.query, [sqlObj.countSql, sqlObj.countArgs])
+                .end(function(err, results) {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    callback(err, {
+                        data: results[0][0][0],
+                        totalCount: results[0][1][0]
+                    });
+                });
+
+            return this.content;
+
+        }
+
 
         // 当为事物时调用事物query函数，并返回事物对象，不为事物时调用普通query函数
         return this.content.query(sqlObj.sql, sqlObj.args, callback);
@@ -724,7 +745,8 @@ SQL.prototype.convertQueryArgs = function(as, queryArgs) {
         }
     });
 
-    this.$where[as] = _.extend(this.$where[as] || {}, returnArgs);
+    if (_.keys(returnArgs).length > 0)
+        this.$where[as] = _.extend(this.$where[as] || {}, returnArgs);
 
     return returnArgs;
 
@@ -771,6 +793,9 @@ SQL.prototype.analysisDirective = function(directive, value) {
         case "$count":
             this.$count = true;
             break;
+        case "$andCount":
+            this.$andCount = true;
+            break;
     }
 };
 
@@ -786,7 +811,10 @@ function execQueue(queue, func, args, ts, callback) {
 
     queue.push(function(next) {
         args.push(ts, function(err, result) {
-            if (err) return callback(err);
+            if (err) {
+                queue.length = 0;
+                return callback(err);
+            }
 
             callback(err, result);
             next();
@@ -860,6 +888,8 @@ function convert_ToC(name) {
 function gFindSQL(SQL) {
     var sql = "select ";
     var args = [];
+    var countSql;
+    var countArgs;
 
     if (SQL.$count) {
         sql += " count(*) count ";
@@ -871,6 +901,9 @@ function gFindSQL(SQL) {
         }
     }
 
+    if (SQL.$andCount) {
+        countSql = "select count(*) count ";
+    }
 
     var tmpFrom = [];
     var tmpTable = {};
@@ -890,11 +923,18 @@ function gFindSQL(SQL) {
 
     });
     sql += "from " + tmpFrom.join(",") + " ";
-
+    if (SQL.$andCount) {
+        countSql += "from " + tmpFrom.join(",") + " ";
+    }
     if (_.keys(SQL.$where).length > 0) {
         var querySQL = gQuerySQL(SQL.$where);
         sql += "where " + querySQL.sql + " ";
         args = args.concat(querySQL.args);
+
+        if (SQL.$andCount) {
+            countSql += "from " + tmpFrom.join(",") + " ";
+            countArgs = querySQL.args;
+        }
     }
 
     if (SQL.$ob.length > 0) {
@@ -906,7 +946,14 @@ function gFindSQL(SQL) {
         args = args.concat(SQL.$limit);
     }
 
-
+    if (SQL.$andCount) {
+        return {
+            sql: convertCTo_(sql),
+            args: args,
+            countSql: convertCTo_(countSql),
+            countArgs: countArgs
+        };
+    }
     return {
         sql: convertCTo_(sql),
         args: args
