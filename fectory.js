@@ -4,6 +4,13 @@ var models = {};
 var repository = require('./repository');
 
 
+_.mixin({allReplace:function(arry) {
+    _.each(arry, function(v,i) {
+        arry[i] = 0;
+    });
+    return arry;
+}});
+
 //repository.pool = mysql.createPool(config.mysql);
 
 
@@ -67,7 +74,7 @@ Fectory.prototype.begin = function(callback) {
  */
 var query = function(sql, args, ts, callback) {
 
-    //console.log("debug:sql:", sql, "args:", args);
+    // console.log("debug:sql:", sql, "args:", args);
 
     if (!callback) {
         var _sql = new SQL(ts);
@@ -508,7 +515,7 @@ var del = function(modelName, queryArgs, ts, callback) {
     // 模型检测
     if (queryArgs)
         checkObjForModel(model, queryArgs);
-    var sql = new SQL();
+    var sql = new SQL(ts);
     var as = "$" + _.keys(sql.$table).length;
     sql.$table[as] = modelName;
     sql.$method = "delete";
@@ -1012,15 +1019,14 @@ function gCreateSQL(SQL) {
             if (_num === 0) {
                 sql += "(" + _.keys(dt).join(",") + ") ";
             }
-
-            _dts.push("(" + _.values(dt).join(",").replace(/[^,]+/g, "?") + ")");
+            _dts.push("(" + formatSqlForArry(_.values(dt)) + ")");
             args = args.concat(_.values(dt));
             _num++;
         });
         valueSql += _dts.join(",");
     } else {
         sql += "(" + _.keys(SQL.$data).join(",") + ") ";
-        valueSql += "(" + _.values(SQL.$data).join(",").replace(/[^,]+/g, "?") + ")";
+        valueSql += "(" + formatSqlForArry(_.values(SQL.$data)) + ")";
         args = args.concat(_.values(SQL.$data));
     }
 
@@ -1126,7 +1132,7 @@ function gQuerySQL(where) {
                     // value类型为数组时
                     if (_.isArray(v.value)) {
                         if (v.type === "=") { // type为=时
-                            _keys.push(key + " in (" + v.value.join(",").replace(/[^,]+/g, "?") + ")");
+                            _keys.push(key + " in (" + formatSqlForArry(v.value) + ")");
 
                             args = args.concat(v.value);
                         } else if (v.type === "!=") { // type为!=时
@@ -1155,7 +1161,7 @@ function gQuerySQL(where) {
                 // value类型为数组时
                 if (_.isArray(v.value)) {
                     if (v.type === "=" || v.type === "in") { // type为=时
-                        _keys.push(key + " in (" + v.value.join(",").replace(/[^,]+/g, "?") + ")");
+                        _keys.push(key + " in (" + formatSqlForArry(v.value) + ")");
 
                         args = args.concat(v.value);
                     } else if (v.type === "!=") { // type为!=时
@@ -1212,6 +1218,14 @@ function checkType(type) {
     var checkArray = ["=", "!=", ">=", "<=", "<", ">", "like", "in"];
     if (checkArray.indexOf(type) < 0)
         throw new Error("type:" + type + "不合法,必须是(" + checkArray.toString() + ")中的符号");
+}
+
+function formatSqlForArry(arry) {
+    _.each(arry, function(v, i) {
+        arry[i] = 0;
+    });
+
+    return arry.join(",").replace(/[^,]+/g,"?");
 }
 
 
