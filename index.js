@@ -4,6 +4,11 @@ var mysql = require('mysql');
 
 module.exports = {
     models: fectory.models,
+    init: function(opts,models) {
+        fectory.models = _.extend(fectory.models, models);
+        fectory.repository.pool = mysql.createPool(opts);
+        return fectory.Fectory;
+    },
     addModels: function(models) {
     	fectory.models = _.extend(fectory.models, models);
     },

@@ -1,7 +1,7 @@
 {
   "name": "node-entities",
-  "version": "1.0.2",
-  "description": "this is a little  mysql orm",
+  "version": "1.0.3",
+  "description": "this is a less  mysql orm",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
