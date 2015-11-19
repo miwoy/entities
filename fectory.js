@@ -67,7 +67,7 @@ Fectory.prototype.begin = function(callback) {
  */
 var query = function(sql, args, ts, callback) {
 
-    // console.log("debug:sql:", sql, "args:", args);
+    //console.log("debug:sql:", sql, "args:", args);
 
     if (!callback) {
         var _sql = new SQL(ts);
@@ -313,13 +313,38 @@ var find = function(modelName, queryArgs, returnStruct, ts, callback) {
     var as = "$" + _.keys(sql.$table).length;
     sql.$table[as] = modelName;
     if (queryArgs) sql.convertQueryArgs(as, queryArgs);
-    if (returnStruct) sql.convertReturnStruct(as, returnStruct);
+    if (returnStruct) {
+        sql.convertReturnStruct(as, returnStruct);
+    } else {
+        sql.convertReturnStruct(as, model);
+    }
+
+
 
     if (!callback) {
         return sql;
     }
 
     var sqlObj = sql.gSQL();
+    if (sql.$andCount) {
+        x.begin()
+            .fork(query, [sqlObj.sql, sqlObj.args, ts])
+            .fork(query, [sqlObj.countSql, sqlObj.countArgs, ts])
+            .end(function(err, results) {
+                if (err) {
+                    return callback(err);
+                }
+
+                callback(err, {
+                    data: results[0][0][0],
+                    totalCount: results[1][0][0][0].count
+                });
+            });
+
+        return ts;
+
+    }
+
     return query(sqlObj.sql, sqlObj.args, ts, callback);
 
 };
@@ -694,7 +719,7 @@ function SQL(content) {
 
                     callback(err, {
                         data: results[0][0][0],
-                        totalCount: results[0][1][0]
+                        totalCount: results[0][1][0][0].count
                     });
                 });
 
@@ -932,7 +957,7 @@ function gFindSQL(SQL) {
         args = args.concat(querySQL.args);
 
         if (SQL.$andCount) {
-            countSql += "from " + tmpFrom.join(",") + " ";
+            countSql += "where " + querySQL.sql + " ";
             countArgs = querySQL.args;
         }
     }
