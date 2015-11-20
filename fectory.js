@@ -4,12 +4,14 @@ var models = {};
 var repository = require('./repository');
 
 
-_.mixin({allReplace:function(arry) {
-    _.each(arry, function(v,i) {
-        arry[i] = 0;
-    });
-    return arry;
-}});
+_.mixin({
+    allReplace: function(arry) {
+        _.each(arry, function(v, i) {
+            arry[i] = 0;
+        });
+        return arry;
+    }
+});
 
 //repository.pool = mysql.createPool(config.mysql);
 
@@ -19,46 +21,31 @@ function Fectory() {
 }
 
 Fectory.prototype.findOne = function(modelName, queryArgs, returnStruct, callback) {
-    return execQueue(this.queue, findOne, [modelName, queryArgs, returnStruct], this, callback);
+    return findOne(modelName, queryArgs, returnStruct, this, callback);
 };
 
 Fectory.prototype.find = function(modelName, queryArgs, returnStruct, callback) {
-    if (!callback) {
-        return find(modelName, queryArgs, returnStruct, this);
-    }
-    return execQueue(this.queue, find, [modelName, queryArgs, returnStruct], this, callback);
+    return find(modelName, queryArgs, returnStruct, this, callback);
 };
 
 Fectory.prototype.count = function(modelName, queryArgs, callback) {
-    return execQueue(this.queue, count, [modelName, queryArgs], this, callback);
+    return count(modelName, queryArgs, this, callback);
 };
 
 Fectory.prototype.create = function(modelName, data, callback) {
-    if (!callback) {
-        return create(modelName, data, this);
-    }
-    return execQueue(this.queue, create, [modelName, data], this, callback);
+    return create(modelName, data, this, callback);
 };
 
 Fectory.prototype.update = function(modelName, queryArgs, data, callback) {
-    if (!callback) {
-        return update(modelName, queryArgs, data, this);
-    }
-    return execQueue(this.queue, update, [modelName, queryArgs, data], this, callback);
+    return update(modelName, queryArgs, data, this, callback);
 };
 
 Fectory.prototype.del = function(modelName, queryArgs, callback) {
-    if (!callback) {
-        return del(modelName, queryArgs, this);
-    }
-    return execQueue(this.queue, del, [modelName, queryArgs], this, callback);
+    return del(modelName, queryArgs, this, callback);
 };
 
 Fectory.prototype.query = function(sql, args, callback) {
-    if (!callback) {
-        return query(sql, args, this);
-    }
-    return execQueue(this.queue, query, [sql, args], this, callback);
+    return query(sql, args, this, callback);
 };
 
 Fectory.prototype.begin = function(callback) {
@@ -83,7 +70,7 @@ var query = function(sql, args, ts, callback) {
         return _sql;
     }
 
-    if (ts.trans) {
+    if (ts && ts.trans) {
         ts.trans.query(sql, args, function(err, code, result) {
             if (_.isArray(result)) {
                 _.each(result, function(value, index) {
@@ -281,6 +268,7 @@ var findOne = function(modelName, queryArgs, returnStruct, ts, callback) {
  * @param  {Function} callback     err or Array
  */
 var find = function(modelName, queryArgs, returnStruct, ts, callback) {
+
     //  参数匹配与检测
     if (_.isFunction(queryArgs)) {
         callback = queryArgs;
@@ -326,8 +314,6 @@ var find = function(modelName, queryArgs, returnStruct, ts, callback) {
         sql.convertReturnStruct(as, model);
     }
 
-
-
     if (!callback) {
         return sql;
     }
@@ -341,18 +327,16 @@ var find = function(modelName, queryArgs, returnStruct, ts, callback) {
                 if (err) {
                     return callback(err);
                 }
-
                 callback(err, {
                     data: results[0][0][0],
                     totalCount: results[1][0][0][0].count
                 });
             });
 
-        return ts;
-
+        return;
     }
 
-    return query(sqlObj.sql, sqlObj.args, ts, callback);
+    query(sqlObj.sql, sqlObj.args, ts, callback);
 
 };
 
@@ -565,6 +549,7 @@ function SQL(content) {
      */
     this.count = function() {
         this.$count = true;
+        return this;
     };
 
     /**
@@ -717,8 +702,8 @@ function SQL(content) {
 
         if (this.$andCount) {
             x.begin()
-                .next(this.content, this.content.query, [sqlObj.sql, sqlObj.args])
-                .next(this.content, this.content.query, [sqlObj.countSql, sqlObj.countArgs])
+                .fork(query, [sqlObj.sql, sqlObj.args, null])
+                .next(query, [sqlObj.countSql, sqlObj.countArgs, null])
                 .end(function(err, results) {
                     if (err) {
                         return callback(err);
@@ -730,13 +715,13 @@ function SQL(content) {
                     });
                 });
 
-            return this.content;
+            return;
 
         }
 
 
         // 当为事物时调用事物query函数，并返回事物对象，不为事物时调用普通query函数
-        return this.content.query(sqlObj.sql, sqlObj.args, callback);
+        query(sqlObj.sql, sqlObj.args, null, callback);
 
     };
 }
@@ -1225,7 +1210,7 @@ function formatSqlForArry(arry) {
         arry[i] = 0;
     });
 
-    return arry.join(",").replace(/[^,]+/g,"?");
+    return arry.join(",").replace(/[^,]+/g, "?");
 }
 
 
