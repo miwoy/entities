@@ -61,7 +61,7 @@ Fectory.prototype.begin = function(callback) {
  */
 var query = function(sql, args, ts, callback) {
 
-    // console.log("debug:sql:", sql, "args:", args);
+   // console.log("debug:sql:", sql, "args:", args);
 
     if (!callback) {
         var _sql = new SQL(ts);
@@ -1099,12 +1099,12 @@ function gDeleteSQL(SQL) {
 function gQuerySQL(where) {
     var sql = "";
     var args = [];
-    var _keys;
+    var _keys = [];
 
     _.each(where, function(query, as) {
 
 
-        _keys = [];
+        
 
         // 遍历查询参数对象
         _.each(query, function(v, key) {

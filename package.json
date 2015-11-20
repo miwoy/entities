@@ -20,6 +20,6 @@
   "dependencies": {
     "mysql": "^2.9.0",
     "underscore": "^1.8.3",
-    "x-flow": "^1.2.3"
+    "x-flow": "^1.2.4"
   }
 }
