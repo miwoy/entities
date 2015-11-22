@@ -1043,8 +1043,12 @@ function gUpdateSQL(SQL) {
     sql += " set ";
 
     _.each(SQL.$data, function(value, key) {
-        _keys.push(key + "=?");
-        args.push(value);
+
+        if (value !== undefined && value !== null) {
+            _keys.push(key + "=?");
+            args.push(value);
+        }
+
     });
 
     sql += _keys.join(",");
