@@ -61,7 +61,7 @@ Fectory.prototype.begin = function(callback) {
  */
 var query = function(sql, args, ts, callback) {
 
-   // console.log("debug:sql:", sql, "args:", args);
+    // console.log("debug:sql:", sql, "args:", args);
 
     if (!callback) {
         var _sql = new SQL(ts);
@@ -678,7 +678,7 @@ function SQL(content) {
             checkObjForModel(model, returnStruct);
 
         var as = "$" + _.keys(this.$table).length;
-        this.$table[as] = " join " + modelName;
+        this.$table[as] = " left join " + modelName;
         if (onArgs) this.$on[as] = onArgs;
         if (returnStruct) this.convertReturnStruct(as, returnStruct);
 
@@ -929,7 +929,9 @@ function gFindSQL(SQL) {
             tmpTable = tmpFrom[tmpFrom.length - 1];
             tmpTable += v + " " + k;
             if (SQL.$on[k]) {
-                var querySQL = gQuerySQL(SQL.$on);
+                var on = {};
+                on[k] = SQL.$on[k];
+                var querySQL = gQuerySQL(on);
                 tmpTable += " on " + querySQL.sql;
                 args = args.concat(querySQL.args);
             }
@@ -958,8 +960,8 @@ function gFindSQL(SQL) {
         sql += "order by " + SQL.$ob.join(",") + " ";
     }
 
-    if (SQL.$limit.length > 0) {
-        sql += "limit " + SQL.$limit.join(",").replace(/[^,]+/g, "?") + " ";
+    if ((SQL.$limit.length === 1 && SQL.$limit[0]) || (SQL.$limit.length === 2 && SQL.$limit[0] && SQL.$limit[1])) {
+        sql += "limit " + formatSqlForArry(SQL.$limit);
         args = args.concat(SQL.$limit);
     }
 
@@ -1104,8 +1106,6 @@ function gQuerySQL(where) {
     _.each(where, function(query, as) {
 
 
-        
-
         // 遍历查询参数对象
         _.each(query, function(v, key) {
 
@@ -1116,11 +1116,11 @@ function gQuerySQL(where) {
 
                     // value类型为数组时
                     if (_.isArray(v.value)) {
-                        if (v.type === "=") { // type为=时
+                        if (v.type === "in") { // type为=时
                             _keys.push(key + " in (" + formatSqlForArry(v.value) + ")");
 
                             args = args.concat(v.value);
-                        } else if (v.type === "!=") { // type为!=时
+                        } else if (v.type === "=" || v.type === "!=") { // type为!=时
                             var _type = v.type;
                             _.each(v, function(v, i) {
                                 _keys.push(key + _type + "?");
@@ -1145,11 +1145,11 @@ function gQuerySQL(where) {
 
                 // value类型为数组时
                 if (_.isArray(v.value)) {
-                    if (v.type === "=" || v.type === "in") { // type为=时
+                    if (v.type === "in") { // type为=时
                         _keys.push(key + " in (" + formatSqlForArry(v.value) + ")");
 
                         args = args.concat(v.value);
-                    } else if (v.type === "!=") { // type为!=时
+                    } else if (v.type === "=" || v.type === "!=") { // type为!=时
                         var _type = v.type;
                         _.each(v, function(v, i) {
                             _keys.push(key + _type + "?");
@@ -1160,7 +1160,7 @@ function gQuerySQL(where) {
                         throw new Error("参数query类型错误，type必须为'=' or '!=' or 'in':", query);
                     }
 
-                } else { //  否则为string或number时
+                } else if (v.value !== undefined || v.value !== null) { //  否则为string或number时
                     checkType(v.type);
                     if (v.type === "like")
                         v.value = "%" + v.value + "%";
@@ -1180,14 +1180,12 @@ function gQuerySQL(where) {
 
 
         });
-
-
-
-
     });
     if (_keys.length > 0)
         sql += _keys.join(" and ");
 
+
+   
     return {
         sql: sql,
         args: args
