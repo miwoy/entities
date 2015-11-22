@@ -532,7 +532,7 @@ function SQL(content) {
     this.$cols = [];
     this.$table = {};
     this.$where = {};
-    this.$ob = [];
+    this.$ob = null;
     this.$limit = [];
     this.$count = false;
     this.$data = [];
@@ -608,11 +608,7 @@ function SQL(content) {
      * @return {Object}              返回SQL对象
      */
     this.orderBy = function(args) {
-        if (_.isArray(args)) {
-            this.$ob = this.$ob.concat(args);
-        } else {
-            this.$ob = this.$ob.concat(_.values(arguments));
-        }
+        this.$ob = args;
         return this;
 
     };
@@ -793,17 +789,9 @@ SQL.prototype.convertReturnStruct = function(as, returnStruct) {
  * @param  {String} directive 指令名称
  */
 SQL.prototype.analysisDirective = function(directive, value) {
-    var self = this;
     switch (directive) {
         case "$ob":
-            if (_.isObject(value)) {
-                _.each(value, function(v, k) {
-                    if (v === "desc")
-                        self.$ob.push(k + " " + v);
-                    else
-                        self.$ob.push(k);
-                });
-            }
+            this.$ob = value;
             break;
         case "$limit":
             this.$limit = value;
@@ -957,8 +945,15 @@ function gFindSQL(SQL) {
         }
     }
 
-    if (SQL.$ob.length > 0) {
-        sql += "order by " + SQL.$ob.join(",") + " ";
+    if (SQL.$ob) {
+        var _ob = [];
+        _.each(SQL.$ob, function(v, k) {
+            if (v === "desc")
+                _ob.push(k + " " + v);
+            else
+                _ob.push(k);
+        });
+        sql += "order by " + _ob.join(",") + " ";
     }
 
     if ((SQL.$limit.length === 1 && SQL.$limit[0]) || (SQL.$limit.length === 2 && SQL.$limit[0] && SQL.$limit[1])) {
@@ -1186,7 +1181,7 @@ function gQuerySQL(where) {
         sql += _keys.join(" and ");
 
 
-   
+
     return {
         sql: sql,
         args: args
