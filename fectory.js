@@ -793,14 +793,15 @@ SQL.prototype.convertReturnStruct = function(as, returnStruct) {
  * @param  {String} directive 指令名称
  */
 SQL.prototype.analysisDirective = function(directive, value) {
+    var self = this;
     switch (directive) {
         case "$ob":
             if (_.isObject(value)) {
                 _.each(value, function(v, k) {
                     if (v === "desc")
-                        this.$ob.push(k + " " + v);
+                        self.$ob.push(k + " " + v);
                     else
-                        this.$ob.push(k);
+                        self.$ob.push(k);
                 });
             }
             break;
@@ -1131,7 +1132,7 @@ function gQuerySQL(where) {
                             throw new Error("参数query类型错误，type必须为'=' or '!=':", query);
                         }
 
-                    } else { //  否则为string或number时
+                    } else if (v.value !== undefined && v.value !== null) { //  否则为string或number时
                         checkType(v.type);
                         if (v.type === "like")
                             v.value = "%" + v.value + "%";
@@ -1160,7 +1161,7 @@ function gQuerySQL(where) {
                         throw new Error("参数query类型错误，type必须为'=' or '!=' or 'in':", query);
                     }
 
-                } else if (v.value !== undefined || v.value !== null) { //  否则为string或number时
+                } else if (v.value !== undefined && v.value !== null) { //  否则为string或number时
                     checkType(v.type);
                     if (v.type === "like")
                         v.value = "%" + v.value + "%";
