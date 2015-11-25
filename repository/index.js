@@ -1,6 +1,11 @@
+var mysqlClient = require('mysql');
+
 var mysql = {};
 
 mysql.pool = null;
+mysql.createPool = function(opts) {
+    this.pool = mysqlClient.createPool(opts);
+};
 
 mysql.query = function(sql, args, callback) {
     if (this.pool) {

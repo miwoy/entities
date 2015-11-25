@@ -1053,9 +1053,6 @@ function gUpdateSQL(SQL) {
 
     sql += _keys.join(",");
 
-    var sqlObj = gQuerySQL(query);
-    sql += sqlObj.sql;
-    args = args.concat(sqlObj.args);
 
     if (SQL.$where.$0) {
         var querySQL = gQuerySQL(SQL.$where);
@@ -1203,6 +1200,12 @@ function checkType(type) {
         throw new Error("type:" + type + "不合法,必须是(" + checkArray.toString() + ")中的符号");
 }
 
+/**
+ * 格式化sql，从一个数组对象中。将一个数组转化成“?,?,?,?,?”字符串形式
+ * 
+ * @param  {[type]} arry [description]
+ * @return {[type]}      [description]
+ */
 function formatSqlForArry(arry) {
     _.each(arry, function(v, i) {
         arry[i] = 0;
