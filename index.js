@@ -1,4 +1,4 @@
-var fectory = require("./new_fectory");
+var fectory = require("./fectory");
 var models = require('./lib/models');
 var repository = require('./repository');
 module.exports = {
