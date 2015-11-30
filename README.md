@@ -73,7 +73,7 @@ var getTest = function(query) {
 
     var fectory = new Fectory();
     fectory.find("test", {
-        id: {
+        id: {      //  或 id: 57
             value: 57,
             type: "="
         }
