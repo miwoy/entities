@@ -22,3 +22,9 @@
 2. 修复一个bug，在gFind.js中，对于$limit值检测不严格
 
 3. 修复一个bug，在tool.js中，formatSqlForArry函数会更改传进来的数组值，现已修正，使用局部变量的方式
+
+## 2015-12-1 v1.3.3
+
+1. 修复一个bug， 在fectory.js中，findOne与count未定义
+
+2. 修复一个bug， 在gQuery.js中，对相等查询时$指令未正确处理
