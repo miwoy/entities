@@ -13,7 +13,7 @@ function Fectory() {
 }
 
 Fectory.prototype.findOne = function(modelName, queryArgs, returnStruct, callback) {
-    return findOne(modelName, queryArgs, returnStruct, repository, callback);
+    return find.One(modelName, queryArgs, returnStruct, repository, callback);
 };
 
 Fectory.prototype.find = function(modelName, queryArgs, returnStruct, callback) {
@@ -21,7 +21,7 @@ Fectory.prototype.find = function(modelName, queryArgs, returnStruct, callback) 
 };
 
 Fectory.prototype.count = function(modelName, queryArgs, callback) {
-    return count(modelName, queryArgs, repository, callback);
+    return find.count(modelName, queryArgs, repository, callback);
 };
 
 Fectory.prototype.create = function(modelName, data, callback) {
