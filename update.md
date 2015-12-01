@@ -14,3 +14,11 @@
 
 5. 在common.js中新增两个命名转换函数<br/>
 `convertC2P() // camel to pascal ,convertP2C() // pascal to camel`
+
+## 2015-12-1 v1.3.2
+
+1. 修复一个bug，在gFind.js中，使用$andCount指令时，错误的使用‘+=’运算符，现已改为‘=’
+
+2. 修复一个bug，在gFind.js中，对于$limit值检测不严格
+
+3. 修复一个bug，在tool.js中，formatSqlForArry函数会更改传进来的数组值，现已修正，使用局部变量的方式
