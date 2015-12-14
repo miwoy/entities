@@ -38,7 +38,7 @@ this is a less mysql for node orm
 ## 使用方法
 
 ```` javascript
-var fectoryMaster = require('node-entities');
+var factoryMaster = require('node-entities');
 
 // 定义模型
 var models = {
@@ -56,7 +56,7 @@ var models = {
 };
 
 // 初始化，并返回工厂构造器 
-var Fectory = fectoryMaster.init({
+var Factory = factoryMaster.init({
     host: 'your mysql host',
     port: 8292,
     user: 'your mysql user',
@@ -71,8 +71,8 @@ var Fectory = fectoryMaster.init({
 // 查询
 var getTest = function(query) {
 
-    var fectory = new Fectory();
-    fectory.find("test", {
+    var factory = new Factory();
+    factory.find("test", {
         id: {      //  或 id: 57
             value: 57,
             type: "="
@@ -92,7 +92,7 @@ getTest();
 
 ###### Entitie(master)对象：
     工厂管理者对象
-    var master = require('node-entities');  // return fectoryMaster;
+    var master = require('node-entities');  // return factoryMaster;
 
 ###### getModels:
     获取当前所有的模型配置
@@ -104,29 +104,29 @@ getTest();
 
 ###### init:
     初始化方法，接受两个参数，mysql配置对象，与models对象
-    master.init(opts, models);  // return class:Fectory;
+    master.init(opts, models);  // return class:Factory;
 
-###### Fectory:
+###### Factory:
     工厂提供者类，用来创建工厂对象
-    var fectory = new master.Fectory();  // return entity:fectory;
+    var factory = new master.Factory();  // return entity:factory;
 
 ###### find:
     查询，返回SQL对象或null，取决于是否传入callback。results总是返回一个数组，除非err不为null
     // return SQL || null;
     // callback(err, results)
-    fectory.find("模型名", [{查询参数}], [{返回结构}], callback);
+    factory.find("模型名", [{查询参数}], [{返回结构}], callback);
 
 ###### findOne:
     查询一条数据,返回结构省略时返回所有属性，callback中的result为对象类型
     // return null;
     // callback(err, result);
-    fectory.findOne("模型名", [{查询参数}], [{返回结构}], callback); 
+    factory.findOne("模型名", [{查询参数}], [{返回结构}], callback); 
 
 ###### count:
     查询总条数
     // return null;
     // callback(err, count); 
-    fectory.count("模型名", [{查询参数}], callback); 
+    factory.count("模型名", [{查询参数}], callback); 
 
 
 

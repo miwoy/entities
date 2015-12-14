@@ -1,4 +1,4 @@
-var fectoryMaster = require('./index');
+var factoryMaster = require('./index');
 
 var models = {
     test: function Test() {
@@ -13,7 +13,7 @@ var models = {
         };
     }
 };
-var Fectory = fectoryMaster.init({
+var Factory = factoryMaster.init({
     host: 'your mysql host',
     port: 8292,
     user: 'your mysql user',
@@ -28,12 +28,12 @@ var Fectory = fectoryMaster.init({
 // 查询
 var getTest = function(query) {
 
-    //     fectory.query("select * from test", [])
+    //     factory.query("select * from test", [])
     //     .exec(function(err, result) {
     //         console.log(err, result);
     //     });
-    var fectory = new Fectory();
-    fectory.find("test", {
+    var factory = new Factory();
+    factory.find("test", {
         id: {
             value: 57,
             type: "="
@@ -49,19 +49,19 @@ var getTest = function(query) {
 getTest();
 
 var createTest = function(data) {
-    fectory.create("test", data).exec(function(err, result) {
+    factory.create("test", data).exec(function(err, result) {
         callback(err, result);
     });
 };
 
 var setTest = function(query, data, callback) {
-    fectory.update("test", query, data, function(err, result) {
+    factory.update("test", query, data, function(err, result) {
         callback(err, result);
     });
 };
 
 var delTest = function(query, callback) {
-    fectory.del("test", query, function(err, result) {
+    factory.del("test", query, function(err, result) {
         callback(err, result);
     });
 };
@@ -73,7 +73,7 @@ var beginTest = function() {
             type: "="
         }
     };
-    fectory.begin(function(err, trans) {
+    factory.begin(function(err, trans) {
         if (err) return callback(err);
     }).create("test", {
         name: "begin",

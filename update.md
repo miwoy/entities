@@ -25,7 +25,7 @@
 
 ## 2015-12-1 v1.3.3
 
-1. 修复一个bug， 在fectory.js中，findOne与count未定义
+1. 修复一个bug， 在factory.js中，findOne与count未定义
 
 2. 修复一个bug， 在gQuery.js中，对相等查询时$指令未正确处理
 
