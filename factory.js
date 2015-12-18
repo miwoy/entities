@@ -13,7 +13,7 @@ function Factory() {
 }
 
 Factory.prototype.findOne = function(modelName, queryArgs, returnStruct, callback) {
-    return find.One(modelName, queryArgs, returnStruct, repository, callback);
+    return find.one(modelName, queryArgs, returnStruct, repository, callback);
 };
 
 Factory.prototype.find = function(modelName, queryArgs, returnStruct, callback) {
