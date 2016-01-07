@@ -50,7 +50,7 @@ mysql.begin = function(callback) {
                         commit: function(callback) {
                             connection.commit(function(err, results) {
                                 if (err) {
-                                    return connection.rollback(function(err, results) {
+                                    return connection.rollback(function(e, results) {
                                         connection.release();
                                         callback(err, null);
                                     });
@@ -69,7 +69,7 @@ mysql.begin = function(callback) {
                         query: function(sql, args, callback) {
                             connection.query(sql, args, function(err, results) {
                                 if (err) {
-                                    return connection.rollback(function(err, results) {
+                                    return connection.rollback(function(e, results) {
                                         connection.release();
                                         callback(err, null);
                                     });
