@@ -1,4 +1,3 @@
-var _ = require('underscore');
 var repository = require('./repository');
 var find = require('./lib/find');
 var create = require('./lib/create');
