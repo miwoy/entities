@@ -40,14 +40,14 @@ module.exports = {
  * @return {[type]} [description]
  */
 function autoMapping(level, dbname, models, callback) {
-    if (level) {
+    if (level && level!=="none") {
         var _factory = new factory.Factory();
         check(_factory, dbname, models, function(err, result) {
             if (err) {
                 return callback(err);
             }
 
-            // console.log("debug: check result", result);
+            // console.log("debug: check result", result.chanModel);
             switch (level) {
                 case "create":
                     create(_factory, result.newModel, callback);
@@ -113,14 +113,14 @@ function check(factory, dbname, models, callback) {
             ctx.size = 50;
             ctx.count = modelNames.length;
             var sql = "select distinct table_name from information_schema.columns where table_schema=? and table_name not in (" + formatSqlForArry(modelNames) + ")";
-            factory.query(sql, [dbname].concat(modelNames), function(err, result) {
+            factory.query(sql, [dbname].concat(common.batchConvertC2_(modelNames)), function(err, result) {
                 if (err) {
                     return ctx.err(err);
                 }
 
                 if (result.length > 0) {
                     _.each(result, function(table) {
-                        disappearModel.push(common.convert_2C(table.tableName));
+                        disappearModel.push(table.tableName);
                     });
                     ctx.next();
                 } else {
@@ -134,7 +134,7 @@ function check(factory, dbname, models, callback) {
 
             var sql = "select table_name, column_name, data_type, column_type, column_default from information_schema.columns where table_schema=? and table_name in (" + formatSqlForArry(ctx._modelNames) + ") order by table_name, column_name";
 
-            factory.query(sql, [dbname].concat(ctx._modelNames), function(err, result) {
+            factory.query(sql, [dbname].concat(common.batchConvertC2_(ctx._modelNames)), function(err, result) {
                 if (err) {
                     return callback(err);
                 }
@@ -145,13 +145,10 @@ function check(factory, dbname, models, callback) {
         })
         .step(function(ctx) { // 对比变化
             _.each(ctx.tables, function(table) {
-
-                if (!models[table.tableName]) return;
-
+                table.tableName = common.convert_2C(table.tableName);
                 delete newModel[table.tableName];
                 chanModel[table.tableName] = _.extend({}, new models[table.tableName]());
                 _.each(table.columns, function(column) {
-
                     var propName = common.convert_2C(column.columnName);
                     // 删除 drop
                     if (!chanModel[table.tableName][propName]) {
@@ -164,20 +161,22 @@ function check(factory, dbname, models, callback) {
                     // 变化 change
                     // 类型对比
                     if (mapping.type[column.dataType] != chanModel[table.tableName][propName].type) {
-
+                        // console.log(table.tableName, column.columnName, "类型不一致");
                         return chanModel[table.tableName][propName].status = 1;
                     }
 
                     // 大小对比
                     var _tmp = /\(\d+\)/.exec(column.columnType);
-                    var size = _tmp ? _tmp[0].slice(1, -1) : 0;
+                    var size = _tmp && _tmp[0].slice(1, -1);
 
                     if (size != (chanModel[table.tableName][propName].size || mapping.default[column.dataType])) {
+                         // console.log(table.tableName, column.columnName, "大小不一致", size, (chanModel[table.tableName][propName].size || mapping.default[column.dataType]));
                         return chanModel[table.tableName][propName].status = 1;
                     }
 
                     // 默认值对比
                     if (column.columnDefault != chanModel[table.tableName][propName].default) {
+                         // console.log(table.tableName, column.columnName, "默认值不一致", column.columnDefault, chanModel[table.tableName][propName].default);
                         return chanModel[table.tableName][propName].status = 1;
                     }
 
@@ -216,10 +215,12 @@ function check(factory, dbname, models, callback) {
 function create(factory, newModel, callback) {
     if (_.keys(newModel).length === 0) return callback(null, true);
     x.each(newModel, function(Model, key) {
+        key = common.convertC2_(key);
         var ctx = this;
         var model = new Model();
         var sql = "create table " + key + "(";
         _.each(model, function(column, name) {
+            name = common.convertC2_(name);
             sql += "`" + name + "` " + (name === "id" ? "char(36) not null," : ((column.mapping && column.mapping.type || opts.default[column.type.name][0] || "varchar") + ((column.size || opts.default[column.type.name][1]) ? ("(" + (column.size || opts.default[column.type.name][1]) + ")") : "") + " " + (column.notNull ? "not null" : "null") + (column.default ? " default '" + column.default+"'" : "") + ","));
         });
         sql += "primary key(`id`) comment '');";
@@ -249,9 +250,11 @@ function update(factory, chanModel, callback) {
     if (_.keys(chanModel).length === 0) return callback(null, true);
 
     x.each(chanModel, function(value, key) {
+        key = common.convertC2_(key);
         var ctx = this;
         var sql = "alter table `" + key + "` ";
         _.each(value, function(column, name) {
+            name = common.convertC2_(name);
             if (column.status === 2) {
                 sql += "drop column `" + name + "`,";
             } else if (column.status === 1) {
@@ -372,6 +375,7 @@ function formatSqlForArry(arry) {
     return _arry.join(",").replace(/[^,]+/g, "?");
 }
 
+
 /**
  * 关系转化对象    将关系型对象数组内重复列压缩成一个对象形式
  * 例：  table = [{id:1,ref_id:1},{id:1,ref_id:2}, {id:2,ref_id:1}]  --> [{id:1, ref:[ref_id:1,ref_id:2]}, {id:2,colName: [ref_id:1]}]
@@ -416,17 +420,17 @@ var mapping = {
         int: Number,
         timestamp: Number,
         bigint: Number,
+        decimal: Number,
+        tinyint: Number,
         date: Date,
-        datetime: Date,
+        datetime: Date
     },
     default: {
         varchar: 45,
         char: 36,
-        int: 11,
         bigint: 20,
-        datetime: 0,
-        timestamp: 0,
-        text: 65535
+        int: 11,
+        tinyint: 4
     }
 };
 
