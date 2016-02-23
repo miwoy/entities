@@ -1,6 +1,6 @@
 {
   "name": "node-entities",
-  "version": "1.5.1",
+  "version": "1.4.12",
   "description": "this is a less  mysql orm",
   "main": "index.js",
   "scripts": {
@@ -20,6 +20,6 @@
   "dependencies": {
     "mysql": "^2.9.0",
     "underscore": "^1.8.3",
-    "x-flow": "^2.3.4"
+    "x-flow": "^2.2.0"
   }
 }

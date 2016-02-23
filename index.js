@@ -16,6 +16,11 @@ module.exports = {
             models.set(mds);
         var map = opts.map;
         if (opts.map) delete opts.map;
+
+        if (opts.debug) {
+            factory.setDebug(opts.debug);
+            delete opts.debug;
+        }
         repository.createPool(opts);
 
         autoMapping(map, opts.database, mds, function(err, result) {
@@ -23,7 +28,8 @@ module.exports = {
                 return console.log("自动映射失败：", err);
             }
 
-            console.log("自动映射结果:", result);
+            if (result !== "none")
+                console.log("自动映射结果:", result);
         });
         return factory.Factory;
     },
@@ -40,7 +46,7 @@ module.exports = {
  * @return {[type]} [description]
  */
 function autoMapping(level, dbname, models, callback) {
-    if (level && level!=="none") {
+    if (level && level !== "none") {
         var _factory = new factory.Factory();
         check(_factory, dbname, models, function(err, result) {
             if (err) {
@@ -170,13 +176,13 @@ function check(factory, dbname, models, callback) {
                     var size = _tmp && _tmp[0].slice(1, -1);
 
                     if (size != (chanModel[table.tableName][propName].size || mapping.default[column.dataType])) {
-                         // console.log(table.tableName, column.columnName, "大小不一致", size, (chanModel[table.tableName][propName].size || mapping.default[column.dataType]));
+                        // console.log(table.tableName, column.columnName, "大小不一致", size, (chanModel[table.tableName][propName].size || mapping.default[column.dataType]));
                         return chanModel[table.tableName][propName].status = 1;
                     }
 
                     // 默认值对比
                     if (column.columnDefault != chanModel[table.tableName][propName].default) {
-                         // console.log(table.tableName, column.columnName, "默认值不一致", column.columnDefault, chanModel[table.tableName][propName].default);
+                        // console.log(table.tableName, column.columnName, "默认值不一致", column.columnDefault, chanModel[table.tableName][propName].default);
                         return chanModel[table.tableName][propName].status = 1;
                     }
 
