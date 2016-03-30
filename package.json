@@ -1,6 +1,6 @@
 {
   "name": "node-entities",
-  "version": "1.4.15",
+  "version": "1.4.16",
   "description": "this is a less  mysql orm",
   "main": "index.js",
   "scripts": {
