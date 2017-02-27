@@ -38,6 +38,89 @@ module.exports = {
     },
     createFactory: function() {
         return new factory.Factory();
+    },
+    export: function() {
+        /**
+         * 模型api导出
+         */
+
+        var factory = this.createFactory();
+        var _models = models.get();
+
+        _.each(_models, function(value, key) {
+            value.findOne = function(queryArgs, returnStruct, callback) {
+                if (queryArgs.$trans) return queryArgs.$trans.findOne(key, queryArgs, returnStruct, callback);
+                return factory.findOne(key, queryArgs, returnStruct, callback);
+            };
+            value.find = function(queryArgs, returnStruct, callback) {
+
+                return factory.find(key, queryArgs, returnStruct, callback)
+            };
+            value.count = function(queryArgs, callback) {
+                return factory.count(key, queryArgs, callback);
+            };
+            value.create = function(data, callback) {
+                return factory.create(key, data, callback);
+            };
+            value.update = function(queryArgs, data, callback) {
+                return factory.update(key, queryArgs, data, callback);
+            };
+            value.del = function(queryArgs, callback) {
+                return factory.del(key, queryArgs, callback);
+            };
+        });
+
+        _models.query = factory.query;
+        _models.begin = function(callback) { // 循环太大，可以想办法优化
+           return new Promise(function(resolve, reject) {
+                factory.begin(function(err, trans) {
+                    if (err) {
+                        return callback ? callback(err) : reject(err);
+                    }
+
+                    var ts = {
+                        _trans: trans
+                    }
+                    _.each(_models, function(value, key) {
+                        ts[key] = ts[key] || {};
+                        ts[key].findOne = function(queryArgs, returnStruct, callback) {
+                            if (queryArgs.$trans) return queryArgs.$trans.findOne(key, queryArgs, returnStruct, callback);
+                            return trans.findOne(key, queryArgs, returnStruct, callback);
+                        };
+                        ts[key].find = function(queryArgs, returnStruct, callback) {
+
+                            return trans.find(key, queryArgs, returnStruct, callback)
+                        };
+                        ts[key].count = function(queryArgs, callback) {
+                            return trans.count(key, queryArgs, callback);
+                        };
+                        ts[key].create = function(data, callback) {
+                            return trans.create(key, data, callback);
+                        };
+                        ts[key].update = function(queryArgs, data, callback) {
+                            return trans.update(key, queryArgs, data, callback);
+                        };
+                        ts[key].del = function(queryArgs, callback) {
+                            return trans.del(key, queryArgs, callback);
+                        };
+                    });
+
+                    ts.commit = function(callback) {
+                        return trans.commit(callback);
+                    };
+                    ts.rollback = function(callback) {
+                        return trans.rollback(callback);
+                    };
+                    ts.query = function(sql, args, callback) {
+                        return trans.query(sql, args, callback);
+                    };
+                    callback ? callback(null, ts) : resolve(ts);
+                });
+            });
+        }
+
+        return _models;
+
     }
 };
 

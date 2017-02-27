@@ -61,6 +61,12 @@
 3.修改映射逻辑，增加decimal默认值配置
 4.修改测试用力中的模型配置
 
+## 2017-02-28 v1.5.0
+1.增加模型导出方法
+factoryMaster.init(opts);
+let db = factoryMaster.export();
+db.test.find();
+
 ## 待修改内容
 
 $where与$ob参数未检查
