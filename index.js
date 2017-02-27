@@ -138,7 +138,7 @@ function check(factory, dbname, models, callback) {
         .step(function(ctx) { // 获取50条数据库表记录
             ctx._modelNames = modelNames.slice(ctx.idx * ctx.size, ctx.idx * ctx.size + ctx.size);
 
-            var sql = "select table_name, column_name, data_type, column_type, column_default from information_schema.columns where table_schema=? and table_name in (" + formatSqlForArry(ctx._modelNames) + ") order by table_name, column_name";
+            var sql = "select table_name, column_name, data_type, column_type, column_default, column_comment, column_key from information_schema.columns where table_schema=? and table_name in (" + formatSqlForArry(ctx._modelNames) + ") order by table_name, column_name";
 
             factory.query(sql, [dbname].concat(common.batchConvertC2_(ctx._modelNames)), function(err, result) {
                 if (err) {
@@ -166,8 +166,8 @@ function check(factory, dbname, models, callback) {
 
                     // 变化 change
                     // 类型对比
-                    if (mapping.type[column.dataType] != chanModel[table.tableName][propName].type) {
-                        // console.log(table.tableName, column.columnName, "类型不一致");
+                    if (chanModel[table.tableName][propName].type && mapping.type[column.dataType] != chanModel[table.tableName][propName].type) {
+                        // console.log(table.tableName, column.columnName, "类型不一致", mapping.type[column.dataType], chanModel[table.tableName][propName].type);
                         return chanModel[table.tableName][propName].status = 1;
                     }
 
@@ -175,7 +175,7 @@ function check(factory, dbname, models, callback) {
                     var _tmp = /\(\d+\)/.exec(column.columnType);
                     var size = _tmp && _tmp[0].slice(1, -1);
 
-                    if (size != (chanModel[table.tableName][propName].size || mapping.default[column.dataType])) {
+                    if (size && size != (chanModel[table.tableName][propName].size || mapping.default[column.dataType])) {
                         // console.log(table.tableName, column.columnName, "大小不一致", size, (chanModel[table.tableName][propName].size || mapping.default[column.dataType]));
                         return chanModel[table.tableName][propName].status = 1;
                     }
@@ -185,6 +185,20 @@ function check(factory, dbname, models, callback) {
                         // console.log(table.tableName, column.columnName, "默认值不一致", column.columnDefault, chanModel[table.tableName][propName].default);
                         return chanModel[table.tableName][propName].status = 1;
                     }
+
+                    // comment对比
+                    if (chanModel[table.tableName][propName].comment !== undefined && column.columnComment != chanModel[table.tableName][propName].comment) {
+                        // console.log(table.tableName, column.columnName, "comment 不一致", column.columnComment, chanModel[table.tableName][propName].comment)
+                        return chanModel[table.tableName][propName].status = 1;
+                    }
+
+                    // // index对比
+                    // if (column.columnKey != "PRI") {
+                    //     if ((chanModel[table.name][propName].uniq?"UNI":null)!=column.columnKey) { // 非空索引未匹配
+
+                    //     }
+                    //     return chanModel[table.tableName][propName].status = 1;
+                    // }
 
                     delete chanModel[table.tableName][propName];
 
@@ -227,8 +241,14 @@ function create(factory, newModel, callback) {
         var sql = "create table " + key + "(";
         _.each(model, function(column, name) {
             name = common.convertC2_(name);
-            sql += "`" + name + "` " + (name === "id" ? "char(36) not null," : ((column.mapping && column.mapping.type || opts.default[column.type.name][0] || "varchar") + ((column.size || opts.default[column.type.name][1]) ? ("(" + (column.size || opts.default[column.type.name][1]) + ")") : "") + " " + (column.notNull ? "not null" : "null") + (column.default ? " default '" + column.default+"'" : "") + ","));
+            sql += "`" + name + "` " + (name === "id" ? "char(36) not null," : ((column.mapping && column.mapping.type || opts.default[column.type.name][0] || "varchar") + ((column.size || mapping.default[column.mapping.type]) ? ("(" + (column.size || mapping.default[column.mapping.type]) + ")") : "") + " " + (column.notNull ? "not null" : "null") + (column.default ? " default '" + column.default+"'" : "") + " comment \"" + (column.comment || "") + "\"" + ","));
+            if (column.uniq) {
+                sql += "unique index (`" + name + "`),"
+            } else if (column.index) {
+                sql += "index (`" + name + "`),"
+            }
         });
+
         sql += "primary key(`id`) comment '');";
 
         factory.query(sql, [], function(err, result) {
@@ -264,9 +284,17 @@ function update(factory, chanModel, callback) {
             if (column.status === 2) {
                 sql += "drop column `" + name + "`,";
             } else if (column.status === 1) {
-                sql += "change column `" + name + "` `" + name + "` " + (name === "id" ? "char(36) not null," : ((column.mapping && column.mapping.type || opts.default[column.type.name][0] || "varchar") + ((column.size || opts.default[column.type.name][1]) ? ("(" + (column.size || opts.default[column.type.name][1]) + ")") : "") + " " + (column.notNull ? "not null" : "null") + (column.default ? " default '" + column.default+"'" : "") + ","));
+                sql += "change column `" + name + "` `" + name + "` " + (name === "id" ? "char(36) not null," : ((column.mapping && column.mapping.type || opts.default[column.type.name][0] || "varchar") + ((column.size || mapping.default[column.mapping.type]) ? ("(" + (column.size || mapping.default[column.mapping.type]) + ")") : "") + " " + (column.notNull ? "not null" : "null") + (column.default ? " default '" + column.default+"'" : "") + " comment \"" + (column.comment || "") + "\"" + ","));
             } else if (!column.status) {
-                sql += "add column `" + name + "` " + ((column.mapping && column.mapping.type || opts.default[column.type.name][0] || "varchar") + ((column.size || opts.default[column.type.name][1]) ? ("(" + (column.size || opts.default[column.type.name][1]) + ")") : "") + " " + (column.notNull ? "not null" : "null") + (column.default ? " default '" + column.default+"'" : "") + ",");
+                sql += "add column `" + name + "` " + ((column.mapping && column.mapping.type || opts.default[column.type.name][0] || "varchar") + ((column.size || mapping.default[column.mapping.type]) ? ("(" + (column.size || mapping.default[column.mapping.type]) + ")") : "") + " " + (column.notNull ? "not null" : "null") + (column.default ? " default '" + column.default+"'" : "") + " comment \"" + (column.comment || "") + "\"" + ",");
+
+                if (column.uniq) {
+                    sql += "add unique index (`" + name + "`),"
+                }
+
+                if (column.index && !column.uniq) {
+                    sql += "add index (`" + name + "`),"
+                }
             }
         });
 
@@ -418,7 +446,7 @@ function R2O(table, colName, array) {
     return results;
 }
 
-var mapping = {
+var mapping = { // 自动映射，默认值
     type: {
         varchar: String,
         char: String,
@@ -436,11 +464,12 @@ var mapping = {
         char: 36,
         bigint: 20,
         int: 11,
-        tinyint: 4
+        tinyint: 4,
+        decimal: "10, 2"
     }
 };
 
-var opts = {
+var opts = { // 正向映射，待重构
     default: {
         "String": ["varchar", 45],
         "Number": ["int"],
