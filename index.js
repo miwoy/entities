@@ -12,15 +12,38 @@ module.exports = {
     getModel: models.get,
     setModel: models.set,
     init: function(opts, mds) {
-        if (mds)
+        if (mds) {
+
+            if (opts.globals) {
+                let baseModel = opts.globals.baseModel || {};
+                let extend = opts.globals.extend; // 模型扩展
+
+                if (extend && _.isObject(extend)) {
+                    if (extend.createTime) baseModel.createTime = {
+                        type: Date,
+                        index: 1
+                    }
+                    if (extend.updateTime) baseModel.updateTime = {
+                        type: Date,
+                        index: 1
+                    }
+                    if (extend.logicDel) baseModel.deleteTime = {
+                        type: Date,
+                        index: 1
+                    }
+                }
+
+                _.each(mds, function(model, key) {
+                    mds[key] = _.extend(opts.globals.baseModel, model);
+                });
+
+            }
             models.set(mds);
+        }
         var map = opts.map;
         if (opts.map) delete opts.map;
 
-        if (opts.debug) {
-            factory.setDebug(opts.debug);
-            delete opts.debug;
-        }
+        factory.setOpts(opts);
         repository.createPool(opts);
 
         autoMapping(map, opts.database, mds, function(err, result) {
@@ -48,31 +71,45 @@ module.exports = {
         var _models = models.get();
 
         _.each(_models, function(value, key) {
-            value.findOne = function(queryArgs, returnStruct, callback) {
-                if (queryArgs.$trans) return queryArgs.$trans.findOne(key, queryArgs, returnStruct, callback);
-                return factory.findOne(key, queryArgs, returnStruct, callback);
-            };
-            value.find = function(queryArgs, returnStruct, callback) {
+            Object.defineProperties(value, {
+                findOne: {
+                    value: function(queryArgs, returnStruct, callback) {
+                        if (queryArgs.$trans) return queryArgs.$trans.findOne(key, queryArgs, returnStruct, callback);
+                        return factory.findOne(key, queryArgs, returnStruct, callback);
+                    }
+                },
+                find: {
+                    value: function(queryArgs, returnStruct, callback) {
 
-                return factory.find(key, queryArgs, returnStruct, callback)
-            };
-            value.count = function(queryArgs, callback) {
-                return factory.count(key, queryArgs, callback);
-            };
-            value.create = function(data, callback) {
-                return factory.create(key, data, callback);
-            };
-            value.update = function(queryArgs, data, callback) {
-                return factory.update(key, queryArgs, data, callback);
-            };
-            value.del = function(queryArgs, callback) {
-                return factory.del(key, queryArgs, callback);
-            };
+                        return factory.find(key, queryArgs, returnStruct, callback)
+                    }
+                },
+                count: {
+                    value: function(queryArgs, callback) {
+                        return factory.count(key, queryArgs, callback);
+                    }
+                },
+                create: {
+                    value: function(data, callback) {
+                        return factory.create(key, data, callback);
+                    }
+                },
+                update: {
+                    value: function(queryArgs, data, callback) {
+                        return factory.update(key, queryArgs, data, callback);
+                    }
+                },
+                del: {
+                    value: function(queryArgs, callback) {
+                        return factory.del(key, queryArgs, callback);
+                    }
+                }
+            })
         });
 
         _models.query = factory.query;
         _models.begin = function(callback) { // 循环太大，可以想办法优化
-           return new Promise(function(resolve, reject) {
+            return new Promise(function(resolve, reject) {
                 factory.begin(function(err, trans) {
                     if (err) {
                         return callback ? callback(err) : reject(err);
@@ -83,26 +120,40 @@ module.exports = {
                     }
                     _.each(_models, function(value, key) {
                         ts[key] = ts[key] || {};
-                        ts[key].findOne = function(queryArgs, returnStruct, callback) {
-                            if (queryArgs.$trans) return queryArgs.$trans.findOne(key, queryArgs, returnStruct, callback);
-                            return trans.findOne(key, queryArgs, returnStruct, callback);
-                        };
-                        ts[key].find = function(queryArgs, returnStruct, callback) {
+                        Object.defineProperties(ts[key], {
+                            findOne: {
+                                value: function(queryArgs, returnStruct, callback) {
+                                    if (queryArgs.$trans) return queryArgs.$trans.findOne(key, queryArgs, returnStruct, callback);
+                                    return trans.findOne(key, queryArgs, returnStruct, callback);
+                                }
+                            },
+                            find: {
+                                value: function(queryArgs, returnStruct, callback) {
 
-                            return trans.find(key, queryArgs, returnStruct, callback)
-                        };
-                        ts[key].count = function(queryArgs, callback) {
-                            return trans.count(key, queryArgs, callback);
-                        };
-                        ts[key].create = function(data, callback) {
-                            return trans.create(key, data, callback);
-                        };
-                        ts[key].update = function(queryArgs, data, callback) {
-                            return trans.update(key, queryArgs, data, callback);
-                        };
-                        ts[key].del = function(queryArgs, callback) {
-                            return trans.del(key, queryArgs, callback);
-                        };
+                                    return trans.find(key, queryArgs, returnStruct, callback)
+                                }
+                            },
+                            count: {
+                                value: function(queryArgs, callback) {
+                                    return trans.count(key, queryArgs, callback);
+                                }
+                            },
+                            create: {
+                                value: function(data, callback) {
+                                    return trans.create(key, data, callback);
+                                }
+                            },
+                            update: {
+                                value: function(queryArgs, data, callback) {
+                                    return trans.update(key, queryArgs, data, callback);
+                                }
+                            },
+                            del: {
+                                value: function(queryArgs, callback) {
+                                    return trans.del(key, queryArgs, callback);
+                                }
+                            }
+                        })
                     });
 
                     ts.commit = function(callback) {
@@ -236,7 +287,7 @@ function check(factory, dbname, models, callback) {
             _.each(ctx.tables, function(table) {
                 table.tableName = common.convert_2C(table.tableName);
                 delete newModel[table.tableName];
-                chanModel[table.tableName] = _.extend({}, new models[table.tableName]());
+                chanModel[table.tableName] = _.extend({}, models[table.tableName]);
                 _.each(table.columns, function(column) {
                     var propName = common.convert_2C(column.columnName);
                     // 删除 drop
@@ -315,16 +366,28 @@ function check(factory, dbname, models, callback) {
 
 }
 
+
 function create(factory, newModel, callback) {
     if (_.keys(newModel).length === 0) return callback(null, true);
-    x.each(newModel, function(Model, key) {
+    x.each(newModel, function(model, key) {
         key = common.convertC2_(key);
         var ctx = this;
-        var model = new Model();
+
+        // var model = new Model();
         var sql = "create table " + key + "(";
         _.each(model, function(column, name) {
             name = common.convertC2_(name);
-            sql += "`" + name + "` " + (name === "id" ? "char(36) not null," : ((column.mapping && column.mapping.type || opts.default[column.type.name][0] || "varchar") + ((column.size || mapping.default[column.mapping.type]) ? ("(" + (column.size || mapping.default[column.mapping.type]) + ")") : "") + " " + (column.notNull ? "not null" : "null") + (column.default ? " default '" + column.default+"'" : "") + " comment \"" + (column.comment || "") + "\"" + ","));
+            if (name !== "id") {
+                let type = (column.mapping && column.mapping.type || opts.default[column.type.name][0] || "varchar");
+                let size = ((column.size || mapping.default[type]) ? ("(" + (column.size || mapping.default[type]) + ")") : "")
+                let notNull = (column.notNull ? "not null" : "null");
+                let defaultValue = (column.default ? " default '" + column.default+"'" : "");
+                let comment = " comment \"" + (column.comment || "") + "\"";
+                sql +=  "`" + name + "`" + " " + type + " " + size + " " + notNull + " " + defaultValue + " " + comment + ",";
+            } else {
+                sql += "`" + name + "` char(36) not null,"
+            }
+
             if (column.uniq) {
                 sql += "unique index (`" + name + "`),"
             } else if (column.index) {
@@ -367,9 +430,26 @@ function update(factory, chanModel, callback) {
             if (column.status === 2) {
                 sql += "drop column `" + name + "`,";
             } else if (column.status === 1) {
-                sql += "change column `" + name + "` `" + name + "` " + (name === "id" ? "char(36) not null," : ((column.mapping && column.mapping.type || opts.default[column.type.name][0] || "varchar") + ((column.size || mapping.default[column.mapping.type]) ? ("(" + (column.size || mapping.default[column.mapping.type]) + ")") : "") + " " + (column.notNull ? "not null" : "null") + (column.default ? " default '" + column.default+"'" : "") + " comment \"" + (column.comment || "") + "\"" + ","));
+                sql += "change column `" + name + "` ";
+                if (name !== "id") {
+                    let type = (column.mapping && column.mapping.type || opts.default[column.type.name][0] || "varchar");
+                    let size = ((column.size || mapping.default[type]) ? ("(" + (column.size || mapping.default[type]) + ")") : "")
+                    let notNull = (column.notNull ? "not null" : "null");
+                    let defaultValue = (column.default ? " default '" + column.default+"'" : "");
+                    let comment = " comment \"" + (column.comment || "") + "\"";
+                    sql +=  "`" + name + "`" + " " + type + " " + size + " " + notNull + " " + defaultValue + " " + comment + ",";
+                } else {
+                    sql += "`" + name + "` char(36) not null,"
+                }
+
             } else if (!column.status) {
-                sql += "add column `" + name + "` " + ((column.mapping && column.mapping.type || opts.default[column.type.name][0] || "varchar") + ((column.size || mapping.default[column.mapping.type]) ? ("(" + (column.size || mapping.default[column.mapping.type]) + ")") : "") + " " + (column.notNull ? "not null" : "null") + (column.default ? " default '" + column.default+"'" : "") + " comment \"" + (column.comment || "") + "\"" + ",");
+                sql += "add column ";
+                let type = (column.mapping && column.mapping.type || opts.default[column.type.name][0] || "varchar");
+                let size = ((column.size || mapping.default[type]) ? ("(" + (column.size || mapping.default[type]) + ")") : "")
+                let notNull = (column.notNull ? "not null" : "null");
+                let defaultValue = (column.default ? " default '" + column.default+"'" : "");
+                let comment = " comment \"" + (column.comment || "") + "\"";
+                sql +=  "`" + name + "`" + " " + type + " " + size + " " + notNull + " " + defaultValue + " " + comment + ",";
 
                 if (column.uniq) {
                     sql += "add unique index (`" + name + "`),"
@@ -543,7 +623,7 @@ var mapping = { // 自动映射，默认值
         datetime: Date
     },
     default: {
-        varchar: 45,
+        varchar: 256,
         char: 36,
         bigint: 20,
         int: 11,
@@ -555,7 +635,7 @@ var mapping = { // 自动映射，默认值
 var opts = { // 正向映射，待重构
     default: {
         "String": ["varchar", 45],
-        "Number": ["int"],
+        "Number": ["int", 11],
         "Date": ["datetime"]
     }
 };

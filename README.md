@@ -129,5 +129,5 @@ getTest();
     factory.count("模型名", [{查询参数}], callback); 
 
 
-
+# v2.0版本文档
 

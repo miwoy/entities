@@ -46,8 +46,8 @@ Factory.prototype.begin = function(callback) {
 
 module.exports = {
     Factory: Factory,
-    setDebug: function(value) {
-    	query.setDebug(value);
+    setOpts: function(value) {
+    	query.setOpts(value);
     }
 };
 

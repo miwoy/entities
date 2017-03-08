@@ -1,10 +1,10 @@
 ## 2015-11-30
 
 1. 为了方便查询，对于用到频次很多的相等查询操作进行更简洁的特殊处理。当查询对象中某列与值为相等查询时，可直接在key后面接value值，而以往我们是希望他构建一个这样的对象<br/>
-	`{
-		value:"",
-		type:"="
-	}`
+    `{
+        value:"",
+        type:"="
+    }`
 
 2. 在and函数中增加默认返回列，当返回结构参数为空时，默认返回模型下所有字段。
 
@@ -56,7 +56,7 @@
 
 ## 2017-02-27 v1.4.23
 1.增加index与uniq模型配置，uniq表示非空索引，index表示普通索引，uniq如果与index同时存在以uniq优先
-	仅增加新增索引操作，并不支持删除与修改，如需修改则手动操作数据库
+    仅增加新增索引操作，并不支持删除与修改，如需修改则手动操作数据库
 2.增加comment字段描述，仅限增加和更新时使用
 3.修改映射逻辑，增加decimal默认值配置
 4.修改测试用力中的模型配置
@@ -67,6 +67,41 @@ factoryMaster.init(opts);
 let db = factoryMaster.export();
 db.test.find();
 
+## 2017-03-08 v2.0.0
+1.新增globals全局配置项
+2.新增globals.baseModel配置，配置全局模型公有字段
+3.新增globals.extend配置，配置扩展属性
+4.新增globals.beforeHooks, 配置操作执行前的钩子
+````
+globals: { // 全局配置
+            baseModel: { // 全局模型字段
+                id: { // 配置全局id属性
+                    type: String,
+                    size: 36,
+                    mapping: {
+                        type: "char"
+                    }
+                }
+            },
+            extend: { // 模型扩展功能
+               createTime: true, // 扩展createTime属性，并默认每次新增时配置当前时间
+               updateTime: true, // 扩展updateTime属性，并在每次更新时配置当前时间
+               logicDel: true  // 扩展逻辑删除功能，模型增加deleteTime，并在每次删除时设置此字段的删除时间，并在查询更新删除时默认增加此参数为空限制
+            },
+            beforeHooks: { // 操作执行前钩子
+                create: function(data) { // 新增操作，data为新增对象
+                    console.log("create hook", data);
+                },
+                update: function(queryData, data) { // 更新操作，queryData为条件，data为更新内容
+                    console.log("update hook", queryData, data);
+                }
+                // TODO find and del。find操作比较特殊，在任何有查询操作时候都会执行，如count,findOne
+            }
+        }
+````
+5.增加sql语句表列转义
+6.修改bug，size不能为空
+7.重构model部分，不支持模型为class,只支持object
 ## 待修改内容
 
 $where与$ob参数未检查
