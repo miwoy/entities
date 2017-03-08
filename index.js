@@ -76,33 +76,39 @@ module.exports = {
                     value: function(queryArgs, returnStruct, callback) {
                         if (queryArgs.$trans) return queryArgs.$trans.findOne(key, queryArgs, returnStruct, callback);
                         return factory.findOne(key, queryArgs, returnStruct, callback);
-                    }
+                    },
+                    configurable: true
                 },
                 find: {
                     value: function(queryArgs, returnStruct, callback) {
 
                         return factory.find(key, queryArgs, returnStruct, callback)
-                    }
+                    },
+                    configurable: true
                 },
                 count: {
                     value: function(queryArgs, callback) {
                         return factory.count(key, queryArgs, callback);
-                    }
+                    },
+                    configurable: true
                 },
                 create: {
                     value: function(data, callback) {
                         return factory.create(key, data, callback);
-                    }
+                    },
+                    configurable: true
                 },
                 update: {
                     value: function(queryArgs, data, callback) {
                         return factory.update(key, queryArgs, data, callback);
-                    }
+                    },
+                    configurable: true
                 },
                 del: {
                     value: function(queryArgs, callback) {
                         return factory.del(key, queryArgs, callback);
-                    }
+                    },
+                    configurable: true
                 }
             })
         });
@@ -125,33 +131,39 @@ module.exports = {
                                 value: function(queryArgs, returnStruct, callback) {
                                     if (queryArgs.$trans) return queryArgs.$trans.findOne(key, queryArgs, returnStruct, callback);
                                     return trans.findOne(key, queryArgs, returnStruct, callback);
-                                }
+                                },
+                                configurable: true
                             },
                             find: {
                                 value: function(queryArgs, returnStruct, callback) {
 
                                     return trans.find(key, queryArgs, returnStruct, callback)
-                                }
+                                },
+                                configurable: true
                             },
                             count: {
                                 value: function(queryArgs, callback) {
                                     return trans.count(key, queryArgs, callback);
-                                }
+                                },
+                                configurable: true
                             },
                             create: {
                                 value: function(data, callback) {
                                     return trans.create(key, data, callback);
-                                }
+                                },
+                                configurable: true
                             },
                             update: {
                                 value: function(queryArgs, data, callback) {
                                     return trans.update(key, queryArgs, data, callback);
-                                }
+                                },
+                                configurable: true
                             },
                             del: {
                                 value: function(queryArgs, callback) {
                                     return trans.del(key, queryArgs, callback);
-                                }
+                                },
+                                configurable: true
                             }
                         })
                     });
