@@ -2,11 +2,15 @@ var mysqlClient = require('mysql');
 
 var mysql = {};
 
+// 连接池
 mysql.pool = null;
+
+// 创建连接池
 mysql.createPool = function(opts) {
     this.pool = mysqlClient.createPool(opts);
 };
 
+// 封装query
 mysql.query = function(sql, args, callback) {
     if (this.pool) {
         this.pool.getConnection(function(err, connection) {
@@ -31,6 +35,7 @@ mysql.query = function(sql, args, callback) {
 
 };
 
+// 封装事物导出方法
 mysql.begin = function(callback) {
     if (this.pool) {
         this.pool.getConnection(function(err, connection) {
